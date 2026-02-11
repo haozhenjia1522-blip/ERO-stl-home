@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>3D 展示盒设计器 - 零件库全屏+搜索版</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            display: flex; 
+            height: 100vh; 
+            width: 100vw;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+        }
+        #sidebar { 
+            width: 450px;
+            background: #ffffff;
+            color: #1d1d1f; 
+            padding: 24px; 
+            z-index: 100; 
+            height: 100%; 
+            overflow-y: auto; 
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            border-right: 1px solid #e8e8ed;
+            scroll-behavior: smooth;
+        }
+        #sidebar-nav {
+            position: fixed;
+            left: 450px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 101;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 8px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 0 16px 16px 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e8e8ed;
+            border-left: none;
+        }
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f5f5f7;
+            color: #424245;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-btn:hover {
+            background: #e8e8ed;
+            color: #0071e3;
+            transform: scale(1.1);
+        }
+        .nav-btn.active {
+            background: #0071e3;
+            color: #ffffff;
+        }
+        .section-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #0071e3;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 8px;
+        }
+        #canvas-container { 
+            flex-grow: 1; 
+            position: relative; 
+            height: 100%; 
+            width: calc(100% - 450px); 
+            background-color: #fafafa;
+        }
+        .library { 
+            background: #f9f9fb; 
+            padding: 20px; 
+            border-radius: 16px; 
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .library h3 { 
+            margin-bottom: 20px; 
+            color: #0071e3; 
+            border-bottom: 1px solid #e8e8ed; 
+            padding-bottom: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .control-group { 
+            margin-bottom: 24px; 
+            border-bottom: 1px solid #e8e8ed; 
+            padding-bottom: 20px;
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-size: 14px; 
+            color: #424245;
+        }
+        input[type="number"] { 
+            width: 100%; 
+            padding: 12px 16px; 
+            box-sizing: border-box; 
+            border: 1px solid #e8e8ed;
+            border-radius: 12px; 
+            background-color: #ffffff;
+            font-size: 14px;
+            color: #1d1d1f;
+            transition: border 0.2s ease;
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 12px 16px; 
+            box-sizing: border-box; 
+            border: 1px solid #e8e8ed;
+            border-radius: 12px; 
+            background-color: #ffffff;
+            font-size: 14px; 
+            color: #1d1d1f;
+            transition: border 0.2s ease;
+        }
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            box-sizing: border-box;
+            border: 1px solid #e8e8ed;
+            border-radius: 12px;
+            background-color: #ffffff;
+            font-size: 14px;
+            color: #1d1d1f;
+            transition: border 0.2s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23424245' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+        }
+        input[type="number"]:focus, input[type="text"]:focus, select:focus { 
+            outline: none; 
+            border-color: #0071e3; 
+            box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.1);
+        }
+        button { 
+            padding: 10px 16px; 
+            background: #0071e3; 
+            border: none; 
+            color: #ffffff; 
+            cursor: pointer; 
+            border-radius: 24px; 
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+        button:hover { 
+            background: #0077ed; 
+            transform: translateY(-1px);
+        }
+        button:active { 
+            transform: translateY(0);
+        }
+        button:disabled { 
+            background: #e8e8ed; 
+            color: #86868b;
+            cursor: not-allowed; 
+            transform: none;
+        }
+        .hint { 
+            font-size: 12px; 
+            color: #86868b; 
+            margin-top: 12px; 
+            line-height: 1.5;
+        }
+
+        /* 苹果风格开关 */
+        .box-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #e8e8ed;
+            transition: .2s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #0071e3; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* ✅ 核心修改：零件库全屏高度 + 搜索栏样式 */
+        .parts-library {
+            /* 占用整个屏幕高度（减去侧边栏padding） */
+            height: calc(100vh - 48px);
+            max-height: none;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            display: flex;
+            flex-direction: column;
+        }
+        /* 搜索栏样式 */
+        .part-search-bar {
+            margin-bottom: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #f9f9fb;
+            padding: 8px 0;
+        }
+        .part-search-bar input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            box-sizing: border-box;
+            border: 1px solid #e8e8ed;
+            border-radius: 12px;
+            background-color: #ffffff;
+            font-size: 14px;
+            color: #1d1d1f;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 16px center;
+            background-size: 16px;
+        }
+        .part-search-bar input::placeholder {
+            color: #86868b;
+        }
+        .parts-list { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 16px; 
+            margin-top: 8px;
+            grid-auto-rows: 140px;
+            /* 让列表占满剩余高度 */
+            flex-grow: 1;
+        }
+        .part-item { 
+            background: #ffffff; 
+            border-radius: 12px; 
+            padding: 16px; 
+            text-align: center; 
+            cursor: grab; 
+            border: 1px solid #e8e8ed;
+            transition: all 0.2s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+        .part-item:hover { 
+            border-color: #d1d1d6; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transform: translateY(-2px);
+        }
+        .part-item.dragging { 
+            opacity: 0.8; 
+            cursor: grabbing;
+            transform: translateY(0) scale(0.98); 
+        }
+        .part-img { 
+            width: 100%; 
+            height: 90px; 
+            object-fit: cover; 
+            border-radius: 8px; 
+            margin-bottom: 12px; 
+            background: #f5f5f7;
+            flex-shrink: 0;
+        }
+        .part-name { 
+            font-size: 12px; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            color: #424245;
+            width: 100%;
+            user-select: none;
+        }
+
+        /* 创意空间 */
+        .creative-library { flex-grow: 1; overflow-y: auto; }
+        .stl-list { margin-top: 20px; }
+        .stl-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 12px 16px; 
+            background: #ffffff; 
+            border-radius: 12px; 
+            margin-bottom: 12px; 
+            border: 1px solid #e8e8ed;
+            transition: all 0.2s ease;
+        }
+        .stl-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stl-item .name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1d1d1f; }
+        .stl-item .actions { display: flex; gap: 8px; }
+        .stl-item .actions button { padding: 8px 12px; font-size: 12px; border-radius: 16px; }
+        .stl-item .actions .hide-btn { background: #f5f5f7; color: #1d1d1f; }
+        .stl-item .actions .hide-btn:hover { background: #e8e8ed; }
+        .stl-item .actions .delete-btn { background: #ff3b30; }
+        .stl-item .actions .delete-btn:hover { background: #ff453a; }
+        .stl-item.active { border-color: #0071e3; box-shadow: 0 0 0 2px rgba(0,113,227,0.1); }
+        
+        /* 碰撞模型的列表样式提示 */
+        .stl-item.collision { 
+            border-color: #ff3b30; 
+            box-shadow: 0 0 0 2px rgba(255, 59, 48, 0.1);
+        }
+        .stl-item.collision .name::after { 
+            content: "（已碰撞）"; 
+            font-size: 10px; 
+            color: #ff3b30; 
+            margin-left: 8px;
+        }
+
+        /* 材质选择区域样式 - 保留 */
+        .material-group {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .material-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .material-item label {
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .mode-tip {
+            font-size: 12px;
+            color: #0071e3;
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: rgba(0,113,227,0.05);
+            border-radius: 8px;
+        }
+        
+        /* 全局碰撞提示 - 保留原有 */
+        .collision-global-tip {
+            font-size: 12px;
+            color: #ff3b30;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 59, 48, 0.05);
+            border-radius: 8px;
+            display: none;
+        }
+        .collision-global-tip.active { display: block; }
+
+        .undo-redo-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .undo-redo-group button {
+            flex: 1;
+            padding: 12px 0;
+            font-size: 14px;
+            border-radius: 12px;
+        }
+        .undo-btn { background: #f5f5f7; color: #1d1d1f; }
+        .undo-btn:hover { background: #e8e8ed; }
+        .redo-btn { background: #0071e3; }
+        .redo-btn:hover { background: #0077ed; }
+
+        .drop-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #424245;
+            font-size: 18px;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 24px 32px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .drop-hint.active { opacity: 1; }
+
+        /* 碰撞检测开关样式 - 保留原有 */
+        .collision-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+<div id="sidebar-nav">
+    <button class="nav-btn" data-target="section-1">1</button>
+    <button class="nav-btn" data-target="section-2">2</button>
+    <button class="nav-btn" data-target="section-3">3</button>
+    <button class="nav-btn" data-target="section-4">4</button>
+</div>
+
+<div id="sidebar">
+    <!-- 1 展示盒参数 -->
+    <div class="control-group" id="section-1">
+        <h2 style="font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 16px;">
+            <span class="section-number">1</span>展示盒参数
+        </h2>
+        <label>长度 (L):</label>
+        <input type="number" id="box-l" value="200" step="10">
+        <label>宽度 (W):</label>
+        <input type="number" id="box-w" value="200" step="10">
+        <label>高度 (H):</label>
+        <input type="number" id="box-h" value="300" step="10">
+        <div class="box-toggle">
+            <label class="switch">
+                <input type="checkbox" id="boxVisible" checked>
+                <span class="slider"></span>
+            </label>
+            <span style="font-size:14px;">显示展示盒边界</span>
+        </div>
+
+        <!-- 2 展示盒材质 -->
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8e8ed;" id="section-2">
+            <h3 style="font-size: 16px; margin-bottom: 16px; color: #424245;">
+                <span class="section-number">2</span>展示盒材质
+            </h3>
+            <div class="material-group">
+                <div class="material-item"><label>前面</label><select data-face="front" class="face-material"><option value="acrylic">亚克力（透明）</option><option value="wood">木质</option><option value="black-plastic">黑色塑料</option></select></div>
+                <div class="material-item"><label>后面</label><select data-face="back" class="face-material"><option value="acrylic">亚克力（透明）</option><option value="wood">木质</option><option value="black-plastic">黑色塑料</option></select></div>
+                <div class="material-item"><label>左面</label><select data-face="left" class="face-material"><option value="acrylic">亚克力（透明）</option><option value="wood">木质</option><option value="black-plastic">黑色塑料</option></select></div>
+                <div class="material-item"><label>右面</label><select data-face="right" class="face-material"><option value="acrylic">亚克力（透明）</option><option value="wood">木质</option><option value="black-plastic">黑色塑料</option></select></div>
+                <div class="material-item"><label>上面</label><select data-face="top" class="face-material"><option value="acrylic">亚克力（透明）</option><option value="wood">木质</option><option value="black-plastic">黑色塑料</option></select></div>
+                <div class="material-item"><label>下面</label><select data-face="bottom" class="face-material"><option value="acrylic">亚克力（透明）</option><option value="wood">木质</option><option value="black-plastic">黑色塑料</option></select></div>
+            </div>
+            <div class="hint" style="margin-top: 12px;">说明：亚克力默认透明；木质带深色纹理；黑色塑料为哑光质感（均双面可见）</div>
+        </div>
+    </div>
+
+    <!-- 3 零件库（全屏高度 + 新增搜索栏） -->
+    <div class="library parts-library" id="section-3">
+        <h3>
+            <span class="section-number">3</span>零件库（GLB v2.0 - 自带颜色材质）
+        </h3>
+        <!-- ✅ 新增：零件库搜索栏 -->
+        <div class="part-search-bar">
+            <input type="text" id="partSearchInput" placeholder="搜索零件（输入部分名称即可）" autocomplete="off">
+        </div>
+        <div class="parts-list" id="partsList"></div>
+        <div class="hint" style="margin-top: 16px; font-size: 11px;">
+            说明：GLB格式自带颜色，可多次拖拽生成多个独立模型实例
+        </div>
+    </div>
+
+    <!-- 4 创意空间库（包含重叠提示、保存、撤销重做） -->
+    <div class="library creative-library" id="section-4">
+        <h3>
+            <span class="section-number">4</span>创意空间库
+        </h3>
+        <!-- 碰撞检测开关（重叠提示） -->
+        <div class="collision-toggle" style="margin-bottom: 16px;">
+            <label class="switch">
+                <input type="checkbox" id="collisionDetection" checked>
+                <span class="slider"></span>
+            </label>
+            <span style="font-size:14px;">开启模型重叠提示</span>
+        </div>
+        <!-- 撤销重做 -->
+        <div class="undo-redo-group">
+            <button id="undoBtn" disabled>撤销</button>
+            <button id="redoBtn" disabled>重做</button>
+        </div>
+        <!-- 保存模板 -->
+        <div class="save-group" style="margin-top: 16px;">
+            <label style="font-size: 14px; color: #424245; margin-bottom: 8px;">模板名称</label>
+            <input type="text" id="templateName" placeholder="请输入展示盒模板名称（如：美式房屋组合v1）" style="width: 100%; padding: 12px 16px; box-sizing: border-box; border: 1px solid #e8e8ed; border-radius: 12px; font-size: 14px; margin-bottom: 12px;">
+            <button id="saveTemplateBtn" style="width: 100%; padding: 12px 0;">保存到我的模板库</button>
+        </div>
+        <!-- 全局碰撞提示 -->
+        <div class="collision-global-tip" id="collisionGlobalTip">
+            提示：存在模型重叠，请调整位置/尺寸解决碰撞问题
+        </div>
+        <div class="stl-list" id="stlList">
+            <p style="font-size:14px; color:#86868b; margin-top:16px; text-align: center;">拖拽左侧零件到3D空间（可多次拖拽）</p>
+        </div>
+        <div class="mode-tip" id="modeTip">当前模式：平移 (按Q/W/E切换)</div>
+    </div>
+
+    <div class="hint">
+        操作说明：<br>
+        - 鼠标左键：旋转视角 | 右键：平移视角<br>
+        - 拖拽零件到右侧添加模型（可多次拖拽生成多实例）<br>
+        - Q平移 / W旋转 / E缩放 | Ctrl+Z撤销 | Ctrl+Y重做<br>
+        - 可分别设置展示盒6个面的材质（亚克力/木质/黑色塑料），均支持双面显示<br>
+        - 可开关模型重叠提示，重叠时显示淡红色高亮+列表标注<br>
+        - 直接点击3D空间中的模型进行选中和调整<br>
+        - 修改展示盒长宽高数值，3D边界将实时同步更新<br>
+        - 点击右侧书签按钮可快速跳转到对应功能区<br>
+        - 零件库支持模糊搜索，输入部分名称即可快速查找对应零件
+    </div>
+</div>
+
+<div id="canvas-container">
+    <div class="drop-hint" id="dropHint">释放鼠标，添加GLB零件到创意空间（可多次添加）</div>
+</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
+        }
+    }
+</script>
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { TransformControls } from 'three/addons/controls/TransformControls.js';
+
+    let scene, camera, renderer, orbit, transform, boxMesh, boxLine;
+    const loader = new GLTFLoader();
+    const textureLoader = new THREE.TextureLoader();
+    let selectedSTLId = null;
+    let currentMode = 'translate';
+    let boxVisible = true;
+    let collisionDetectionEnabled = true;
+
+    const collisionMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xff3b30,transparent: true, opacity: 0.3,side: THREE.DoubleSide,
+        depthTest: false,polygonOffset: true,polygonOffsetFactor: -1
+    });
+    let collidingModelIds = new Set();
+
+    // 示例零件库（可扩展更多零件）
+    const partsLibrary = [
+        {
+            id: 'part_1',
+            name: '美式房屋.glb',
+            modelUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/test3.glb',
+            previewImgUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/preview/t3_v1_preview.jpg'
+        },
+        {
+            id: 'part_2',
+            name: '适配器A1 彩色版.glb',
+            modelUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/models/adaptor_a1_v3.glb',
+            previewImgUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/preview/adaptor_a1_v2_preview.jpg'
+        },
+        {
+            id: 'part_3',
+            name: '标准底座.glb',
+            modelUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/models/base.glb',
+            previewImgUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/preview/backup_preview.jpg'
+        },
+        // 新增示例零件（测试搜索功能）
+        {
+            id: 'part_4',
+            name: '欧式房屋.glb',
+            modelUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/test3.glb',
+            previewImgUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/preview/t3_v1_preview.jpg'
+        },
+        {
+            id: 'part_5',
+            name: '适配器B2 黑色版.glb',
+            modelUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/models/adaptor_a1_v3.glb',
+            previewImgUrl: 'https://cdn.jsdelivr.net/gh/haozhenjia1522-blip/ERO-stl-home@main/preview/adaptor_a1_v2_preview.jpg'
+        }
+    ];
+
+    let creativeLibrary = [];
+    const undoStack = [];
+    const redoStack = [];
+    const MAX_STACK_SIZE = 20;
+
+    const materialCache = {
+        acrylic: new THREE.MeshPhongMaterial({
+            color: 0xffffff,transparent: true,opacity: 0.2,
+            side: THREE.DoubleSide,
+            shininess: 10
+        }),
+        'black-plastic': new THREE.MeshPhongMaterial({
+            color: 0x222222,transparent: false,
+            side: THREE.DoubleSide,
+            shininess: 30,specular: 0x444444
+        }),
+        wood: new THREE.MeshPhongMaterial({
+            color: 0x5D3A1F,
+            side: THREE.DoubleSide,
+            shininess: 10,
+            specular: 0x222222
+        })
+    };
+
+    const woodTexture = textureLoader.load(
+        'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/textures/wood/wood_diffuse.jpg',
+        (tex) => {
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(4, 4);
+            materialCache.wood.map = tex;
+            materialCache.wood.needsUpdate = true;
+        },
+        null,
+        (err) => console.log('木纹纹理加载失败，使用兜底颜色：', err)
+    );
+    const woodNormalMap = textureLoader.load(
+        'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/textures/wood/wood_normal.jpg',
+        (tex) => {
+            materialCache.wood.normalMap = tex;
+            materialCache.wood.normalScale = new THREE.Vector2(1.0, 1.0);
+            materialCache.wood.needsUpdate = true;
+        },
+        null,
+        (err) => console.log('木纹法线贴图加载失败：', err)
+    );
+    const woodAoMap = textureLoader.load(
+        'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/textures/wood/wood_ao.jpg',
+        (tex) => {
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(4, 4);
+            materialCache.wood.aoMap = tex;
+            materialCache.wood.aoMapIntensity = 0.8;
+            materialCache.wood.needsUpdate = true;
+        },
+        null,
+        (err) => console.log('木纹环境遮挡贴图加载失败：', err)
+    );
+
+    const boxFaces = { front: null, back: null, left: null, right: null, top: null, bottom: null };
+    const faceMaterialConfig = { front: 'acrylic', back: 'acrylic', left: 'acrylic', right: 'acrylic', top: 'acrylic', bottom: 'acrylic' };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        init3DScene();
+        // 初始化零件库（包含搜索）
+        initPartsLibrary();
+        initDragDropEvents();
+        initSidebarNav();
+        
+        document.getElementById('boxVisible').addEventListener('change', e => {
+            boxVisible = e.target.checked;
+            updateBoxVisibility();
+        });
+        document.getElementById('collisionDetection').addEventListener('change', e => {
+            collisionDetectionEnabled = e.target.checked;
+            collisionDetectionEnabled ? detectGlobalCollisions() : (resetCollisionHighlight(), collidingModelIds.clear(), renderCreativeLibrary());
+        });
+        const boxLInput = document.getElementById('box-l');
+        const boxWInput = document.getElementById('box-w');
+        const boxHInput = document.getElementById('box-h');
+        boxLInput.addEventListener('input', updateBox);
+        boxWInput.addEventListener('input', updateBox);
+        boxHInput.addEventListener('input', updateBox);
+        boxLInput.addEventListener('change', updateBox);
+        boxWInput.addEventListener('change', updateBox);
+        boxHInput.addEventListener('change', updateBox);
+
+        document.querySelectorAll('.face-material').forEach(select => {
+            select.addEventListener('change', e => {
+                const face = e.target.dataset.face;
+                const materialType = e.target.value;
+                faceMaterialConfig[face] = materialType;
+                updateFaceMaterial(face, materialType);
+            });
+        });
+
+        collisionDetectionEnabled = document.getElementById('collisionDetection').checked;
+        initSaveTemplateEvents();
+    });
+
+    // ✅ 核心新增：初始化零件库+模糊搜索功能
+    function initPartsLibrary() {
+        // 初始渲染所有零件
+        renderPartsLibrary(partsLibrary);
+        
+        // 监听搜索框输入，实现模糊搜索
+        const searchInput = document.getElementById('partSearchInput');
+        searchInput.addEventListener('input', (e) => {
+            const searchKeyword = e.target.value.trim().toLowerCase();
+            // 无关键词时显示所有零件
+            if (!searchKeyword) {
+                renderPartsLibrary(partsLibrary);
+                return;
+            }
+            // 模糊匹配：零件名称包含关键词（不区分大小写）
+            const filteredParts = partsLibrary.filter(part => 
+                part.name.toLowerCase().includes(searchKeyword)
+            );
+            // 渲染过滤后的零件
+            renderPartsLibrary(filteredParts);
+        });
+    }
+
+    // 修改renderPartsLibrary，接收零件列表参数
+    function renderPartsLibrary(partsToRender) {
+        const container = document.getElementById('partsList');
+        container.innerHTML = '';
+        
+        // 无匹配结果时提示
+        if (partsToRender.length === 0) {
+            const emptyTip = document.createElement('div');
+            emptyTip.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 40px 0; color: #86868b; font-size: 14px;';
+            emptyTip.textContent = '未找到匹配的零件';
+            container.appendChild(emptyTip);
+            return;
+        }
+
+        partsToRender.forEach(part => {
+            const item = document.createElement('div');
+            item.className = 'part-item';
+            item.dataset.partId = part.id;
+            item.draggable = true;
+
+            const img = document.createElement('img');
+            img.className = 'part-img';
+            img.src = part.previewImgUrl;
+            img.alt = part.name;
+            img.onerror = () => {
+                img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABHPGVmAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uhoaGkpKSkp6WhoaGnp6euLm5ubn6+vp6enq7Ozt7u3u7vLw8PDw8/T09PX19fj4+Pn5+fr6+/z8/P39/QAAAFVklEQVRYhe2WyW7DIAhFUC7BZ0gVWQNsRcjiGUXSGZdOiJClDtBcLzJNvZOM9OGaooWfR6QZIBhDbYl0xBgzOciQV+AjcAbc4uJ74IUlUWsFJH6cCbZHmA07wySR+LhKc/4HMgwV1nYzf1VrfRb3jSFoiWZjGmD8vq7+zKuMSHT5rTkf2nJjJnsvZ7aTnFz/+3zXq17rQV/5XhN9rXpB5vJzV82nO/9CzLq8u2bX0eWfKzCnTHu38f7P6tG6wCwbnfG0V3CgAAAABJRU5ErkJggg==';
+                img.onerror = () => img.style.backgroundColor = '#e8e8ed';
+            };
+
+            const nameEl = document.createElement('div');
+            nameEl.className = 'part-name';
+            nameEl.textContent = part.name;
+            nameEl.title = part.name;
+
+            item.appendChild(img);
+            item.appendChild(nameEl);
+            container.appendChild(item);
+        });
+    }
+
+    function initSidebarNav() {
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const sidebar = document.getElementById('sidebar');
+        
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.dataset.target;
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    navButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                }
+            });
+        });
+
+        sidebar.addEventListener('scroll', () => {
+            const sections = ['section-1', 'section-2', 'section-3', 'section-4'];
+            let activeSection = 'section-1';
+            
+            sections.forEach(sectionId => {
+                const el = document.getElementById(sectionId);
+                const rect = el.getBoundingClientRect();
+                if (rect.top <= 100) {
+                    activeSection = sectionId;
+                }
+            });
+
+            navButtons.forEach(btn => {
+                if (btn.dataset.target === activeSection) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        });
+
+        navButtons[0].classList.add('active');
+    }
+
+    function init3DScene() {
+        const container = document.getElementById('canvas-container');
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xfafafa);
+
+        camera = new THREE.PerspectiveCamera(75, w/h, 0.1, 5000);
+        camera.position.set(400, 400, 400);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+        const dir1 = new THREE.DirectionalLight(0xffffff, 1.2);
+        dir1.position.set(200, 300, 200);
+        scene.add(dir1);
+        const dir2 = new THREE.DirectionalLight(0xffffff, 0.9);
+        dir2.position.set(-200, -200, -200);
+        scene.add(dir2);
+
+        orbit = new OrbitControls(camera, renderer.domElement);
+        orbit.enableDamping = true;
+        orbit.dampingFactor = 0.05;
+        orbit.target.set(0, 150, 0);
+        orbit.update();
+
+        transform = new TransformControls(camera, renderer.domElement);
+        scene.add(transform);
+        transform.addEventListener('dragging-changed', e => {
+            orbit.enabled = !e.value;
+            !e.value && selectedSTLId && collisionDetectionEnabled && (saveCurrentState(), detectGlobalCollisions());
+        });
+        transform.addEventListener('objectChange', () => {
+            selectedSTLId && collisionDetectionEnabled && detectGlobalCollisions();
+        });
+
+        updateBox();
+        animate();
+        window.addEventListener('resize', onWindowResize);
+        initSceneModelClickSelect();
+        initKeyboardShortcuts();
+        initUndoRedoEvents();
+    }
+
+    function updateBox() {
+        if (boxLine) scene.remove(boxLine);
+        if (boxMesh) scene.remove(boxMesh);
+        Object.values(boxFaces).forEach(face => face && scene.remove(face));
+
+        const l = Math.max(10, parseFloat(document.getElementById('box-l').value) || 200);
+        const w = Math.max(10, parseFloat(document.getElementById('box-w').value) || 200);
+        const h = Math.max(10, parseFloat(document.getElementById('box-h').value) || 300);
+        const halfL = l / 2, halfW = w / 2, halfH = h / 2;
+        const faceThickness = 1;
+
+        const boxGeo = new THREE.BoxGeometry(l, h, w);
+        const edges = new THREE.EdgesGeometry(boxGeo);
+        boxLine = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x86868b }));
+        boxLine.position.y = halfH;
+        scene.add(boxLine);
+
+        boxMesh = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, visible: false }));
+        boxMesh.position.y = halfH;
+        scene.add(boxMesh);
+
+        boxFaces.front = createFaceMesh(new THREE.PlaneGeometry(l, h), new THREE.Vector3(0, halfH, halfW - faceThickness/2), new THREE.Euler(0, Math.PI, 0));
+        boxFaces.back = createFaceMesh(new THREE.PlaneGeometry(l, h), new THREE.Vector3(0, halfH, -halfW + faceThickness/2), new THREE.Euler(0, 0, 0));
+        boxFaces.left = createFaceMesh(new THREE.PlaneGeometry(w, h), new THREE.Vector3(-halfL + faceThickness/2, halfH, 0), new THREE.Euler(0, Math.PI/2, 0));
+        boxFaces.right = createFaceMesh(new THREE.PlaneGeometry(w, h), new THREE.Vector3(halfL - faceThickness/2, halfH, 0), new THREE.Euler(0, -Math.PI/2, 0));
+        boxFaces.top = createFaceMesh(new THREE.PlaneGeometry(l, w), new THREE.Vector3(0, h - faceThickness/2, 0), new THREE.Euler(-Math.PI/2, 0, 0));
+        boxFaces.bottom = createFaceMesh(new THREE.PlaneGeometry(l, w), new THREE.Vector3(0, faceThickness/2, 0), new THREE.Euler(Math.PI/2, 0, 0));
+
+        Object.keys(boxFaces).forEach(face => {
+            boxFaces[face].material = materialCache[faceMaterialConfig[face]];
+            scene.add(boxFaces[face]);
+        });
+
+        updateBoxVisibility();
+        collisionDetectionEnabled && creativeLibrary.length > 0 && detectGlobalCollisions();
+    }
+
+    function createFaceMesh(geo, position, rotation) {
+        const mesh = new THREE.Mesh(geo);
+        mesh.position.copy(position);
+        mesh.rotation.set(rotation.x, rotation.y, rotation.z);
+        mesh.receiveShadow = true;
+        return mesh;
+    }
+
+    function updateFaceMaterial(face, materialType) {
+        boxFaces[face] && materialCache[materialType] && (boxFaces[face].material = materialCache[materialType]);
+    }
+
+    function updateBoxVisibility() {
+        if (boxLine) boxLine.visible = boxVisible;
+        Object.values(boxFaces).forEach(face => face && (face.visible = boxVisible));
+    }
+
+    function initDragDropEvents() {
+        const canvas = document.getElementById('canvas-container');
+        const hint = document.getElementById('dropHint');
+        let dragId = null;
+
+        // 事件委托：监听零件列表的拖拽事件（适配动态渲染的零件）
+        document.getElementById('partsList').addEventListener('dragstart', (e) => {
+            const partItem = e.target.closest('.part-item');
+            if (partItem) {
+                dragId = partItem.dataset.partId;
+                partItem.classList.add('dragging');
+            }
+        });
+
+        document.getElementById('partsList').addEventListener('dragend', (e) => {
+            const partItem = e.target.closest('.part-item');
+            if (partItem) {
+                partItem.classList.remove('dragging');
+            }
+            dragId = null;
+            hint.classList.remove('active');
+        });
+
+        canvas.addEventListener('dragover', e => { e.preventDefault(); dragId && hint.classList.add('active'); });
+        canvas.addEventListener('dragleave', () => hint.classList.remove('active'));
+        canvas.addEventListener('drop', e => {
+            e.preventDefault();
+            hint.classList.remove('active');
+            if (!dragId) return;
+            const part = partsLibrary.find(p => p.id === dragId);
+            part && loadGLBModel(part);
+        });
+    }
+
+    function loadGLBModel(part) {
+        const container = document.getElementById('stlList');
+        const tip = document.createElement('div');
+        tip.style.cssText = 'text-align:center; color:#0071e3; margin:16px 0;';
+        tip.textContent = `正在加载：${part.name}（新实例）`;
+        creativeLibrary.length === 0 ? (container.innerHTML = '', container.appendChild(tip)) : container.insertBefore(tip, container.firstChild);
+
+        loader.load(part.modelUrl, (gltf) => {
+            const model = gltf.scene;
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxSize = Math.max(size.x, size.y, size.z);
+            const scale = maxSize > 0 ? 80 / maxSize : 1;
+            model.scale.setScalar(scale);
+            
+            const offset = (creativeLibrary.length % 5) * 30;
+            model.position.set(offset, 150, offset);
+
+            const modelId = `model_${part.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            model.userData = { isGLBModel: true, modelId, partId: part.id, originalMaterials: [] };
+            model.traverse(child => {
+                child.isMesh && model.userData.originalMaterials.push({ mesh: child, material: child.material.clone() });
+            });
+
+            scene.add(model);
+            const instanceCount = creativeLibrary.filter(i => i.partId === part.id).length + 1;
+            const itemName = `${part.name}（实例${instanceCount}）`;
+            const item = { modelId, partId: part.id, name: itemName, model, visible: true };
+            creativeLibrary.push(item);
+            saveInitialState(item);
+            selectModel(modelId);
+            tip.remove();
+            renderCreativeLibrary();
+            collisionDetectionEnabled && detectGlobalCollisions();
+        }, undefined, (err) => {
+            tip.textContent = `加载失败：${part.name}（新实例）`;
+            tip.style.color = '#ff3b30';
+            console.error('GLB加载失败详情：', err);
+        });
+    }
+
+    function renderCreativeLibrary() {
+        const container = document.getElementById('stlList');
+        container.innerHTML = '';
+        if (creativeLibrary.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#86868b; margin-top:16px;">暂无模型（可多次拖拽左侧零件生成多实例）</p>';
+            document.getElementById('collisionGlobalTip').classList.remove('active');
+            return;
+        }
+
+        [...creativeLibrary].reverse().forEach(item => {
+            const collisionClass = collisionDetectionEnabled && collidingModelIds.has(item.modelId) ? 'collision' : '';
+            const itemClass = `stl-item ${item.modelId === selectedSTLId ? 'active' : ''} ${collisionClass}`;
+            const el = document.createElement('div');
+            el.className = itemClass;
+            el.dataset.id = item.modelId;
+
+            const name = document.createElement('div');
+            name.className = 'name';
+            name.textContent = item.name;
+
+            const actions = document.createElement('div');
+            actions.className = 'actions';
+            const hideBtn = document.createElement('button');
+            hideBtn.className = 'hide-btn';
+            hideBtn.textContent = item.visible ? '隐藏' : '显示';
+            hideBtn.onclick = () => {
+                item.visible = !item.visible;
+                item.model.visible = item.visible;
+                hideBtn.textContent = item.visible ? '隐藏' : '显示';
+                collisionDetectionEnabled && detectGlobalCollisions();
+            };
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn';
+            delBtn.textContent = '删除';
+            delBtn.onclick = () => handleDeleteModel(item);
+
+            el.onclick = (e) => { (e.target !== hideBtn && e.target !== delBtn) && selectModel(item.modelId); };
+            actions.appendChild(hideBtn);
+            actions.appendChild(delBtn);
+            el.appendChild(name);
+            el.appendChild(actions);
+            container.appendChild(el);
+        });
+
+        const collisionTip = document.getElementById('collisionGlobalTip');
+        collisionDetectionEnabled && collidingModelIds.size > 0 ? collisionTip.classList.add('active') : collisionTip.classList.remove('active');
+    }
+
+    function handleDeleteModel(item) {
+        if (!confirm(`确定要删除「${item.name}」吗？`)) return;
+        scene.children.includes(item.model) && scene.remove(item.model);
+        item.model.traverse(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) Array.isArray(child.material) ? child.material.forEach(m => m.dispose && m.dispose()) : child.material.dispose && child.material.dispose();
+        });
+        const index = creativeLibrary.findIndex(i => i.modelId === item.modelId);
+        index > -1 && creativeLibrary.splice(index, 1);
+        selectedSTLId === item.modelId && (unselectModel(), transform.detach());
+        undoStack.length = 0;
+        redoStack.length = 0;
+        updateUndoRedoButtons();
+        collisionDetectionEnabled && detectGlobalCollisions();
+        renderCreativeLibrary();
+    }
+
+    function getModelBoundingBox(model) { const box = new THREE.Box3(); box.setFromObject(model); return box; }
+    function detectGlobalCollisions() {
+        if (!collisionDetectionEnabled) return;
+        collidingModelIds.clear();
+        resetCollisionHighlight();
+        const visibleModels = creativeLibrary.filter(item => item.visible).map(item => ({ modelId: item.modelId, model: item.model }));
+        for (let i = 0; i < visibleModels.length; i++) {
+            const modelA = visibleModels[i];
+            const boxA = getModelBoundingBox(modelA.model);
+            for (let j = i + 1; j < visibleModels.length; j++) {
+                const modelB = visibleModels[j];
+                const boxB = getModelBoundingBox(modelB.model);
+                boxA.intersectsBox(boxB) && (collidingModelIds.add(modelA.modelId), collidingModelIds.add(modelB.modelId));
+            }
+        }
+        highlightCollidingModels();
+        renderCreativeLibrary();
+    }
+    function resetCollisionHighlight() {
+        creativeLibrary.forEach(item => {
+            item.model.userData.originalMaterials && item.model.userData.originalMaterials.forEach(({ mesh, material }) => { mesh.material = material; });
+        });
+    }
+    function highlightCollidingModels() {
+        if (!collisionDetectionEnabled) return;
+        creativeLibrary.forEach(item => {
+            if (collidingModelIds.has(item.modelId) && item.visible) {
+                item.model.userData.originalMaterials && item.model.userData.originalMaterials.forEach(({ mesh }) => { mesh.material = collisionMaterial; });
+            }
+        });
+    }
+
+    function saveInitialState(item) {
+        const state = { modelId: item.modelId, position: { x: item.model.position.x, y: item.model.position.y, z: item.model.position.z }, rotation: { x: item.model.rotation.x, y: item.model.rotation.y, z: item.model.rotation.z }, scale: { x: item.model.scale.x, y: item.model.scale.y, z: item.model.scale.z }, visible: item.visible };
+        redoStack.length = 0;
+        undoStack.push(state);
+        undoStack.length > MAX_STACK_SIZE && undoStack.shift();
+        updateUndoRedoButtons();
+    }
+    function saveCurrentState() {
+        if (!selectedSTLId) return;
+        const item = creativeLibrary.find(i => i.modelId === selectedSTLId);
+        if (!item) return;
+        const state = { modelId: selectedSTLId, position: { x: item.model.position.x, y: item.model.position.y, z: item.model.position.z }, rotation: { x: item.model.rotation.x, y: item.model.rotation.y, z: item.model.rotation.z }, scale: { x: item.model.scale.x, y: item.model.scale.y, z: item.model.scale.z }, visible: item.visible };
+        const lastState = undoStack[undoStack.length - 1];
+        if (lastState && lastState.modelId === state.modelId) {
+            const isSame = lastState.position.x === state.position.x && lastState.position.y === state.position.y && lastState.position.z === state.position.z && lastState.rotation.x === state.rotation.x && lastState.rotation.y === state.rotation.y && lastState.rotation.z === state.rotation.z && lastState.scale.x === state.scale.x && lastState.scale.y === state.scale.y && lastState.scale.z === state.scale.z;
+            if (isSame) return;
+        }
+        undoStack.push(state);
+        undoStack.length > MAX_STACK_SIZE && undoStack.shift();
+        redoStack.length = 0;
+        updateUndoRedoButtons();
+    }
+    function undo() {
+        if (undoStack.length <= 1) return;
+        const currentState = undoStack.pop();
+        redoStack.push(currentState);
+        const prevState = undoStack[undoStack.length - 1];
+        restoreState(prevState);
+        collisionDetectionEnabled && detectGlobalCollisions();
+        updateUndoRedoButtons();
+    }
+    function redo() {
+        if (redoStack.length === 0) return;
+        const nextState = redoStack.pop();
+        undoStack.push(nextState);
+        restoreState(nextState);
+        collisionDetectionEnabled && detectGlobalCollisions();
+        updateUndoRedoButtons();
+    }
+    function restoreState(state) {
+        if (!state) return;
+        const item = creativeLibrary.find(i => i.modelId === state.modelId);
+        if (!item) return;
+        item.model.position.set(state.position.x, state.position.y, state.position.z);
+        item.model.rotation.set(state.rotation.x, state.rotation.y, state.rotation.z);
+        item.model.scale.set(state.scale.x, state.scale.y, state.scale.z);
+        item.visible = state.visible;
+        item.model.visible = state.visible;
+        selectModel(state.modelId);
+        renderCreativeLibrary();
+    }
+    function updateUndoRedoButtons() {
+        document.getElementById('undoBtn').disabled = undoStack.length <= 1;
+        document.getElementById('redoBtn').disabled = redoStack.length === 0;
+    }
+
+    function initUndoRedoEvents() {
+        document.getElementById('undoBtn').onclick = undo;
+        document.getElementById('redoBtn').onclick = redo;
+        window.addEventListener('keydown', e => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+            e.ctrlKey && e.key === 'z' && (e.preventDefault(), undo());
+            e.ctrlKey && e.key === 'y' && (e.preventDefault(), redo());
+            e.ctrlKey && e.shiftKey && e.key === 'z' && (e.preventDefault(), redo());
+        });
+    }
+
+    function initSceneModelClickSelect() {
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        renderer.domElement.addEventListener('click', (e) => {
+            if (transform.dragging) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            const glbModels = scene.children.filter(obj => obj.userData.isGLBModel);
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(glbModels, true);
+            if (intersects.length > 0) {
+                let targetObj = intersects[0].object;
+                while (targetObj.parent && !targetObj.userData.modelId) targetObj = targetObj.parent;
+                targetObj.userData && targetObj.userData.modelId && selectModel(targetObj.userData.modelId);
+            } else {
+                unselectModel();
+            }
+        });
+    }
+
+    function selectModel(id) {
+        unselectModel();
+        const item = creativeLibrary.find(i => i.modelId === id);
+        if (!item) return;
+        selectedSTLId = id;
+        transform.attach(item.model);
+        transform.setMode(currentMode);
+        renderCreativeLibrary();
+        updateModeTip();
+    }
+    function unselectModel() {
+        selectedSTLId && (transform.detach(), selectedSTLId = null, renderCreativeLibrary());
+    }
+
+    function initKeyboardShortcuts() {
+        window.addEventListener('keydown', e => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+            if (!selectedSTLId) return;
+            const key = e.key.toLowerCase();
+            key === 'q' && (currentMode = 'translate', transform.setMode('translate'));
+            key === 'w' && (currentMode = 'rotate', transform.setMode('rotate'));
+            key === 'e' && (currentMode = 'scale', transform.setMode('scale'));
+            updateModeTip();
+        });
+    }
+    function updateModeTip() {
+        const modeMap = { translate: '平移', rotate: '旋转', scale: '缩放' };
+        document.getElementById('modeTip').textContent = `当前模式：${modeMap[currentMode]} (Q/W/E切换)`;
+    }
+
+    function initSaveTemplateEvents() {
+        document.getElementById('saveTemplateBtn').addEventListener('click', () => {
+            const templateName = document.getElementById('templateName').value.trim();
+            if (!templateName) { alert('请输入模板名称！'); return; }
+            const templateData = {
+                name: templateName,
+                boxParams: {
+                    l: parseFloat(document.getElementById('box-l').value) || 200,
+                    w: parseFloat(document.getElementById('box-w').value) || 200,
+                    h: parseFloat(document.getElementById('box-h').value) || 300,
+                    boxVisible: boxVisible,
+                    faceMaterials: { ...faceMaterialConfig }
+                },
+                models: creativeLibrary.map(item => ({
+                    modelId: item.modelId, partId: item.partId, name: item.name,
+                    position: { x: item.model.position.x, y: item.model.position.y, z: item.model.position.z },
+                    rotation: { x: item.model.rotation.x, y: item.model.rotation.y, z: item.model.rotation.z },
+                    scale: { x: item.model.scale.x, y: item.model.scale.y, z: item.model.scale.z },
+                    visible: item.visible
+                })),
+                createTime: new Date().toLocaleString(),
+                collisionDetectionEnabled: collisionDetectionEnabled
+            };
+            const savedTemplates = JSON.parse(localStorage.getItem('glbBoxTemplates') || '[]');
+            savedTemplates.push(templateData);
+            localStorage.setItem('glbBoxTemplates', JSON.stringify(savedTemplates));
+            alert(`模板「${templateName}」保存成功！`);
+            document.getElementById('templateName').value = '';
+        });
+    }
+
+    function onWindowResize() {
+        const container = document.getElementById('canvas-container');
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        orbit.update();
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>
