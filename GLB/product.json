@@ -1,1 +1,63 @@
 
+[
+  {
+    "name": "american_house.glb",
+    "price": 55.00,
+    "currency": "GBP"
+  },
+  {
+    "name": "car_tyre.glb",
+    "price": 12.50,
+    "currency": "GBP"
+  },
+  {
+    "name": "collectable_-_citycat.glb",
+    "price": 25.00,
+    "currency": "GBP"
+  },
+  {
+    "name": "fence_wood.glb",
+    "price": 8.00,
+    "currency": "GBP"
+  },
+  {
+    "name": "mushroom.glb",
+    "price": 5.99,
+    "currency": "GBP"
+  },
+  {
+    "name": "oak_wood_plank.glb",
+    "price": 4.50,
+    "currency": "GBP"
+  },
+  {
+    "name": "smoke.glb",
+    "price": 10.00,
+    "currency": "GBP"
+  },
+  {
+    "name": "spot_light__holofote.glb",
+    "price": 15.00,
+    "currency": "GBP"
+  },
+  {
+    "name": "traffic_cone_dirty.glb",
+    "price": 7.50,
+    "currency": "GBP"
+  },
+  {
+    "name": "tree_stump.glb",
+    "price": 9.00,
+    "currency": "GBP"
+  },
+  {
+    "name": "tyre.glb",
+    "price": 11.00,
+    "currency": "GBP"
+  },
+  {
+    "name": "无标题.glb",
+    "price": 0.00,
+    "currency": "GBP"
+  }
+]
