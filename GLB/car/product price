@@ -1,0 +1,51 @@
+
+[
+  {
+    "id": "finish line1.glb",
+    "name": "finish line1.glb",
+    "price": 0.00,
+    "currency": "GBP"
+  },
+  {
+    "id": "spot light.glb",
+    "name": "spot light.glb",
+    "price": 0.00,
+    "currency": "GBP"
+  },
+  {
+    "id": "traffic cone.glb",
+    "name": "traffic cone.glb",
+    "price": 0.00,
+    "currency": "GBP"
+  },
+  {
+    "id": "tyre01.glb",
+    "name": "tyre01.glb",
+    "price": 0.00,
+    "currency": "GBP"
+  },
+  {
+    "id": "tyre02.glb",
+    "name": "tyre02.glb",
+    "price": 0.00,
+    "currency": "GBP"
+  },
+  {
+    "id": "your F1.glb",
+    "name": "your F1.glb",
+    "price": 0.00,
+    "currency": "GBP"
+  },
+  {
+    "id": "your car(large).glb",
+    "name": "your car(large).glb",
+    "price": 0.00,
+    "currency": "GBP"
+  },
+  {
+    "id": "your car(small).glb",
+    "name": "your car(small).glb",
+    "price": 0.00,
+    "currency": "GBP"
+  }
+]
